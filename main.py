@@ -44,6 +44,12 @@ class Character(pygame.sprite.Sprite):
             self.velocity_y += 1
             self.rect.y += self.velocity_y
 
+class Platform(pygame.sprite.Sprite):
+    def __init__(self, x, y, width, height):
+        super(Platform, self).__init__()
+        self.image = pygame.Surface((width, height))
+        self.image.fill(color)
+        self.rect = self.image.get_rect(center=(x, y))
 
 # Initialize Pygame and give access to all the methods in the package
 pygame.init()
@@ -57,42 +63,57 @@ pygame.display.set_caption("Agario")
 # Create clock to later control frame rate
 clock = pygame.time.Clock()
 
+# Add 2 characters
+characters = pygame.sprite.Group()
 sq1 = Character(1100, 300, "red")
 sq2 = Character(100, 300, "pink")
-characters = pygame.sprite.Group()
 characters.add(sq1)
 characters.add(sq2)
+
+# Add 3 platforms
+platforms = pygame.sprite.Group()
+platform1 = Platform(300, 400, 200, 20, "white")
+platform2 = Platform(700, 300, 200, 20, "red")
+platform3 = Platform(500, 500, 200, 20, "pink")
+platforms.add(platform1, platform2, platform3)
 
 # Main game loop
 running = True
 while running:
-    # Event handling
-    for event in pygame.event.get():  # pygame.event.get()
+    screen.fill((0, 0, 0))
+
+    for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-    screen.fill((0, 0, 0))
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP:
+                sq1.jump()
+            if event.key -- pygame.K_w:
+                sq2.jump()
 
     # Get the state of all keys
     keys = pygame.key.get_pressed()
 
     if keys[pygame.K_LEFT]:
-        sq1.move(-2, 0)
+        sq1.move(-5, 0)
     if keys[pygame.K_RIGHT]:
-        sq1.move(2, 0)
-    if keys[pygame.K_UP]:
-        sq1.move(0, -2)
-    if keys[pygame.K_DOWN]:
-        sq1.move(0, 2)
-
+        sq1.move(5, 0)
     if keys[pygame.K_a]:
-        sq2.move(-2, 0)
+        sq2.move(-5, 0)
     if keys[pygame.K_d]:
-        sq2.move(2, 0)
-    if keys[pygame.K_w]:
-        sq2.move(0, -2)
-    if keys[pygame.K_s]:
-        sq2.move(0, 2)
+        sq2.move(5, 0)
 
+    for character in characters:
+        character.gravity()
+        character.on_ground = False # Apply gravity ALWAYS, just like the real world
+
+        for platform in platforms:
+            if character.rect.colliderect(platform.rect) and character.velocity_y > 0:
+                character.on_ground = True
+                character.velocity_y = 0
+                character.rect.bottom = platform.rect.top
+
+    platforms.draw(screen)
     characters.draw(screen)
 
     # Update the display
