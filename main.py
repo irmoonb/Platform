@@ -5,7 +5,7 @@ import math
 
 
 class Character(pygame.sprite.Sprite):
-    def __init__(self, x, y, color):
+    def __init__(self, x, y, color, live_color):
         """
         This function is to initialize the character with all of its attributes.
         This inludes the appearance, and a variable initialized for checking if
@@ -20,7 +20,10 @@ class Character(pygame.sprite.Sprite):
         self.image.convert_alpha()
         self.image.fill(color)
         self.rect = self.image.get_rect(center=(x, y))
+        self.velocity_y = 0
         self.on_ground = False
+        self.live_color = live_color
+        self.alive = True
 
     def move(self, deltax, deltay):
         """
@@ -30,8 +33,9 @@ class Character(pygame.sprite.Sprite):
         :param deltay:
         :return:
         """
-        self.rect.x += deltax
-        self.rect.y += deltay
+        if self.alive:
+            self.rect.x += deltax
+            self.rect.y += deltay
 
     def gravity(self):
         """
@@ -42,14 +46,34 @@ class Character(pygame.sprite.Sprite):
         """
         if not self.on_ground:
             self.velocity_y += 1
-            self.rect.y += self.velocity_y
+        else:
+            self.velocity_y = 0
+        self.rect.y += self.velocity_y
+
+    def jump(self):
+        if self.on_ground and self.alive:
+            self.velocity_y -= 15
+            self.on_ground = False # GRAVITY IS ALWAYS HERE
+
+    def death(self, platforms):
+        if self.rect.top > 600: # AKA, if a player falls off
+            self.alive = False # They die!
+            print("A player died!")
+
+        for platform in platforms:
+            if self.rect.colliderect(platform.rect) and self.velocity_y > 0:
+                if platform.color != self.live_color and platform.color != (200, 200, 200):
+                    self.alive = False
+                    print("A player died!")
+                    return
 
 class Platform(pygame.sprite.Sprite):
-    def __init__(self, x, y, width, height):
+    def __init__(self, x, y, width, height, color):
         super(Platform, self).__init__()
         self.image = pygame.Surface((width, height))
         self.image.fill(color)
-        self.rect = self.image.get_rect(center=(x, y))
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.color = color
 
 # Initialize Pygame and give access to all the methods in the package
 pygame.init()
@@ -65,16 +89,16 @@ clock = pygame.time.Clock()
 
 # Add 2 characters
 characters = pygame.sprite.Group()
-sq1 = Character(1100, 300, "red")
-sq2 = Character(100, 300, "pink")
+sq1 = Character(1100, 300, (255, 0, 0), (255, 0, 0,))
+sq2 = Character(100, 300, (255, 105, 180), (255, 105, 180))
 characters.add(sq1)
 characters.add(sq2)
 
 # Add 3 platforms
 platforms = pygame.sprite.Group()
-platform1 = Platform(300, 400, 200, 20, "white")
-platform2 = Platform(700, 300, 200, 20, "red")
-platform3 = Platform(500, 500, 200, 20, "pink")
+platform1 = Platform(50, 500, 200, 20, (200, 200, 200))
+platform2 = Platform(1000, 500, 200, 20, (255, 0, 0))
+platform3 = Platform(500, 500, 200, 20, (255, 105, 180))
 platforms.add(platform1, platform2, platform3)
 
 # Main game loop
@@ -88,7 +112,7 @@ while running:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
                 sq1.jump()
-            if event.key -- pygame.K_w:
+            if event.key == pygame.K_w:
                 sq2.jump()
 
     # Get the state of all keys
@@ -113,8 +137,16 @@ while running:
                 character.velocity_y = 0
                 character.rect.bottom = platform.rect.top
 
+        character.death(platforms)
+
     platforms.draw(screen)
+    for character in characters:
+        if character.alive:
+            screen.blit(character.image, character.rect.topleft)
     characters.draw(screen)
+
+    if not sq1.alive or not sq2.alive:
+        pygame.quit()
 
     # Update the display
     pygame.display.flip()
