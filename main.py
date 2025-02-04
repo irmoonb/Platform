@@ -3,6 +3,8 @@ import sys
 import random
 import math
 
+from setuptools.msvc import PlatformInfo
+
 # Initialize Pygame and give access to all the methods in the package
 pygame.init()
 
@@ -20,6 +22,11 @@ GRAY = (200, 200, 200)
 RED = (255, 0, 0)
 PINK = (255, 105, 180)
 BLACK = (0, 0, 0)
+BLUE = (0, 0, 255)
+
+#######################################################
+# CLASS: Character
+#######################################################
 
 class Character(pygame.sprite.Sprite):
     def __init__(self, x, y, color, live_color):
@@ -92,6 +99,10 @@ class Character(pygame.sprite.Sprite):
                     print("A player died!")
                     return
 
+#######################################################
+# CLASS: Platform
+#######################################################
+
 class Platform(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height, color, speed_x = 0, speed_y = 0, move_range = 0):
         super(Platform, self).__init__()
@@ -114,6 +125,63 @@ class Platform(pygame.sprite.Sprite):
             if abs(self.rect.x - self.start_x) >= self.move_range or abs(self.rect.y - self.start_y) >= self.move_range:
                 self.direction *= -1
 
+#######################################################
+# CLASS: ENEMY
+#######################################################
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self, platform, speed = 2):
+        super().__init__()
+        self.image = pygame.Surface((50, 50))
+        self.image.fill(BLUE)
+        self.rect = self.image.get_rect(midbottom=(platform.rect.x + platform.rect.width / 2, platform.rect.top))
+        self.platform = platform
+        self.speed = speed
+        self.direction = 1
+        self.on_ground = True
+
+    def move(self):
+        # self.rect.x += self.speed * self.direction
+        #
+        # if self.rect.left <= self.platform.rect.left or self.rect.right >= self.platform.rect.right:
+        #     self.direction *= -1
+        #
+        # self.rect.bottom = self.platform.rect.top
+        if self.on_ground:
+            self.rect.x += self.speed * self.direction
+
+            if self.rect.left <= self.platform.rect.left or self.rect.right >= self.platform.rect.right:
+                self.direction *= -1
+
+            if self.rect.right < self.platform.rect.left or self.rect.left > self.platform.rect.right:
+                self.on_ground = False
+        else:
+            self.gravity_enemy()
+
+    def gravity_enemy(self, platforms):
+        if not self.on_ground:
+            self.velocity_y += 1
+        else:
+            self.velocity_y = 0
+
+        self.rect.y += self.velocity_y
+
+        self.one_ground = False
+        for platform in platforms:
+            if self.rect.colliderect(platform.rect) and self.velocity_y >= 0:
+                self.on_ground = True
+                self.velocity_y = 0
+                self.rect.bottom = platform.rect.top
+
+        if self.rect.top > screen_height:
+            print("Enemy is eliminated.")
+            self.kill()
+
+def check_collision(characters, enemy):
+    for character in characters:
+        if character.alive and character.rect.colliderect(enemy.rect):
+            character.alive = False
+            print("A player made contact with enemy and died!")
+
 # Add 2 characters
 characters = pygame.sprite.Group()
 sq1 = Character(1100, 450, RED, RED)
@@ -121,13 +189,18 @@ sq2 = Character(100, 450, PINK, PINK)
 characters.add(sq1)
 characters.add(sq2)
 
-# Add 3 platforms
+# Add 4 platforms
 platforms = pygame.sprite.Group()
 platform1 = Platform(50, 500, 200, 20, GRAY)
 platform2 = Platform(1000, 500, 200, 20, RED)
 platform3 = Platform(325, 500, 600, 20, PINK)
-platform4 = Platform(500, 350, 200, 20, GRAY, speed_x=2, move_range=100)
+platform4 = Platform(500, 350, 200, 20, GRAY, speed_x=2, move_range=400)
 platforms.add(platform1, platform2, platform3, platform4)
+
+# Add enemy
+enemy = Enemy(platform4)
+enemies = pygame.sprite.Group()
+enemies.add(enemy)
 
 for character in characters:
     for platform in platforms:
@@ -174,14 +247,19 @@ while running:
                 character.rect.bottom = platform.rect.top
 
         character.gravity()
-
         character.death(platforms)
+
+    enemy.move()
+    enemy.gravity_enemy(platforms)
+
+    check_collision(characters, enemy)
 
     platforms.draw(screen)
     for character in characters:
         if character.alive:
             screen.blit(character.image, character.rect.topleft)
     characters.draw(screen)
+    enemies.draw(screen)
 
     if not sq1.alive or not sq2.alive:
         print("Game over. Exiting... 3 seconds...")
