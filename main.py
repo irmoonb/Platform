@@ -140,7 +140,7 @@ class Enemy(pygame.sprite.Sprite):
         self.on_ground = True
 
     def move(self, platforms):
-        if self.on_ground:
+        if self.on_ground and self.platform:
             self.rect.x += self.speed * self.direction
 
             if self.rect.left <= self.platform.rect.left or self.rect.right >= self.platform.rect.right:
@@ -244,8 +244,6 @@ while running:
         character.death(platforms)
 
     enemy.move(platforms)
-    enemy.gravity_enemy(platforms)
-
     check_collision(characters, enemy)
 
     platforms.draw(screen)
