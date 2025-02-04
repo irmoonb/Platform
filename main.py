@@ -3,6 +3,23 @@ import sys
 import random
 import math
 
+# Initialize Pygame and give access to all the methods in the package
+pygame.init()
+
+# Set up the screen dimensions
+screen_width = 1200
+screen_height = 600
+screen = pygame.display.set_mode((screen_width, screen_height))
+pygame.display.set_caption("Agario")
+
+# Create clock to later control frame rate
+clock = pygame.time.Clock()
+
+# Initialize colors
+GRAY = (200, 200, 200)
+RED = (255, 0, 0)
+PINK = (255, 105, 180)
+BLACK = (0, 0, 0)
 
 class Character(pygame.sprite.Sprite):
     def __init__(self, x, y, color, live_color):
@@ -16,10 +33,10 @@ class Character(pygame.sprite.Sprite):
         :param color:
         """
         super(Character, self).__init__()
-        self.image = pygame.Surface((100, 100), pygame.SRCALPHA, 32)
+        self.image = pygame.Surface((50, 50))
         self.image.convert_alpha()
         self.image.fill(color)
-        self.rect = self.image.get_rect(center=(x, y))
+        self.rect = self.image.get_rect(midbottom = (x, y))
         self.velocity_y = 0
         self.on_ground = False
         self.live_color = live_color
@@ -56,50 +73,67 @@ class Character(pygame.sprite.Sprite):
             self.on_ground = False # GRAVITY IS ALWAYS HERE
 
     def death(self, platforms):
-        if self.rect.top > 600: # AKA, if a player falls off
+        if self.rect.top > screen_height: # AKA, if a player falls off
             self.alive = False # They die!
             print("A player died!")
+            return
 
         for platform in platforms:
-            if self.rect.colliderect(platform.rect) and self.velocity_y > 0:
+            if self.rect.colliderect(platform.rect):
+                if platform.color != self.live_color and platform.color != GRAY:
+                    self.alive = False
+                    print("A player landed on the wrong platform and died!")
+                    return
+
+        for platform in platforms:
+            if self.rect.colliderect(platform.rect):
                 if platform.color != self.live_color and platform.color != (200, 200, 200):
                     self.alive = False
                     print("A player died!")
                     return
 
 class Platform(pygame.sprite.Sprite):
-    def __init__(self, x, y, width, height, color):
+    def __init__(self, x, y, width, height, color, speed_x = 0, speed_y = 0, move_range = 0):
         super(Platform, self).__init__()
         self.image = pygame.Surface((width, height))
         self.image.fill(color)
         self.rect = self.image.get_rect(topleft=(x, y))
         self.color = color
+        self.speed_x = speed_x
+        self.speed_y = speed_y
+        self.start_x = x
+        self.start_y = y
+        self.move_range = move_range
+        self.direction = 1
 
-# Initialize Pygame and give access to all the methods in the package
-pygame.init()
+    def move(self):
+        if self.move_range > 0:
+            self.rect.x += self.speed_x * self.direction
+            self.rect.y += self.speed_y * self.direction
 
-# Set up the screen dimensions
-screen_width = 1200
-screen_height = 600
-screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("Agario")
-
-# Create clock to later control frame rate
-clock = pygame.time.Clock()
+            if abs(self.rect.x - self.start_x) >= self.move_range or abs(self.rect.y - self.start_y) >= self.move_range:
+                self.direction *= -1
 
 # Add 2 characters
 characters = pygame.sprite.Group()
-sq1 = Character(1100, 300, (255, 0, 0), (255, 0, 0,))
-sq2 = Character(100, 300, (255, 105, 180), (255, 105, 180))
+sq1 = Character(1100, 450, RED, RED)
+sq2 = Character(100, 450, PINK, PINK)
 characters.add(sq1)
 characters.add(sq2)
 
 # Add 3 platforms
 platforms = pygame.sprite.Group()
-platform1 = Platform(50, 500, 200, 20, (200, 200, 200))
-platform2 = Platform(1000, 500, 200, 20, (255, 0, 0))
-platform3 = Platform(500, 500, 200, 20, (255, 105, 180))
-platforms.add(platform1, platform2, platform3)
+platform1 = Platform(50, 500, 200, 20, GRAY)
+platform2 = Platform(1000, 500, 200, 20, RED)
+platform3 = Platform(325, 500, 600, 20, PINK)
+platform4 = Platform(500, 350, 200, 20, GRAY, speed_x=2, move_range=100)
+platforms.add(platform1, platform2, platform3, platform4)
+
+for character in characters:
+    for platform in platforms:
+        if character.rect.colliderect(platform.rect):
+            if platform.color == character.live_color or platform.color == GRAY:
+                character.on_ground = True
 
 # Main game loop
 running = True
@@ -127,15 +161,19 @@ while running:
     if keys[pygame.K_d]:
         sq2.move(5, 0)
 
+    for platform in platforms:
+        platform.move()
+
     for character in characters:
-        character.gravity()
-        character.on_ground = False # Apply gravity ALWAYS, just like the real world
+        character.on_ground = False
 
         for platform in platforms:
-            if character.rect.colliderect(platform.rect) and character.velocity_y > 0:
+            if character.rect.colliderect(platform.rect) and character.velocity_y >= 0:
                 character.on_ground = True
                 character.velocity_y = 0
                 character.rect.bottom = platform.rect.top
+
+        character.gravity()
 
         character.death(platforms)
 
@@ -146,7 +184,10 @@ while running:
     characters.draw(screen)
 
     if not sq1.alive or not sq2.alive:
-        pygame.quit()
+        print("Game over. Exiting... 3 seconds...")
+        pygame.display.flip()
+        pygame.time.wait(3000)
+        running = False
 
     # Update the display
     pygame.display.flip()
