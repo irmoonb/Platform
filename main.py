@@ -140,20 +140,12 @@ class Enemy(pygame.sprite.Sprite):
         self.on_ground = True
 
     def move(self, platforms):
-        # self.rect.x += self.speed * self.direction
-        #
-        # if self.rect.left <= self.platform.rect.left or self.rect.right >= self.platform.rect.right:
-        #     self.direction *= -1
-        #
-        # self.rect.bottom = self.platform.rect.top
         if self.on_ground:
             self.rect.x += self.speed * self.direction
 
             if self.rect.left <= self.platform.rect.left or self.rect.right >= self.platform.rect.right:
                 self.direction *= -1
 
-            if self.rect.right < self.platform.rect.left or self.rect.left > self.platform.rect.right:
-                self.on_ground = False
         else:
             self.gravity_enemy(platforms)
 
@@ -171,6 +163,8 @@ class Enemy(pygame.sprite.Sprite):
                 self.on_ground = True
                 self.velocity_y = 0
                 self.rect.bottom = platform.rect.top
+                self.platform = platform
+                return
 
         if self.rect.top > screen_height:
             print("Enemy is eliminated.")
