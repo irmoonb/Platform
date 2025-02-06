@@ -1,23 +1,12 @@
+# Irmoon Batbayar
+# Prof. Yin
+# 7.3.3
+# AP Science Principles: Austin High School
+
 import pygame
 import sys
 import random
 import math
-
-######################## NOTES FOR MR. YIN ########################
-# For some reason, the gravity and switching direction logic is not
-# working for the enemy, particularly when the platform switches
-# directions. The enemy just levitates in place until the platform
-# returns, which then it will be back on the platform and switch
-# directions. I literally have no idea what is wrong, but I luckily
-# consider this to be a gameplay feature, as it will provide the
-# user opportunity to get on the platform.
-#
-# Please consider that this program does not utilize the method
-# "sprite.spritecollide() nor sprite.colliderect when grading
-# based on the rubric. This program instead utilizes the method
-# "rect.colliderect" as it maintains the overall theme  of the
-# game, where everything is a rectangle. I'm kind of a freak when
-# it comes to ideas like this, and I apologize for any inconvenience.
 
 # Initialize Pygame and give access to all the methods in the package
 pygame.init()
@@ -37,6 +26,7 @@ RED = (255, 0, 0)
 PINK = (255, 105, 180)
 BLACK = (0, 0, 0)
 BLUE = (0, 0, 255)
+ORANGE = (255, 128, 0)
 
 #######################################################
 # CLASS: Character
@@ -90,7 +80,7 @@ class Character(pygame.sprite.Sprite):
 
     def jump(self):
         if self.on_ground and self.alive:
-            self.velocity_y -= 15
+            self.velocity_y -= 18
             self.on_ground = False # GRAVITY IS ALWAYS HERE
 
     def death(self, platforms):
@@ -201,10 +191,15 @@ characters.add(sq2)
 # Add 4 platforms
 platforms = pygame.sprite.Group()
 platform1 = Platform(50, 500, 200, 20, GRAY)
-platform2 = Platform(1000, 500, 200, 20, RED)
-platform3 = Platform(350, 450, 550, 20, PINK)
-platform4 = Platform(500, 350, 200, 20, GRAY, speed_x=2, move_range=400)
-platforms.add(platform1, platform2, platform3, platform4)
+platform2 = Platform(1000, 500, 200, 20, GRAY)
+platform4 = Platform(300, 200, 600, 20, GRAY)
+platformpink = Platform(400, 350, 200, 20, PINK, speed_x = 2, move_range = 350)
+platformred = Platform(600, 350, 200, 20, RED, speed_x = 2, move_range = 350)
+platformdeath = Platform(100, 155, 50, 5, ORANGE, speed_x = 5, move_range = 900)
+platformdeath2 = Platform(300, 325, 50, 5, ORANGE, speed_x = 3, move_range = 900)
+platformdeath3 = Platform(500, 450, 50, 5, ORANGE, speed_x = 4, move_range = 600)
+platformdeath4 = Platform(500, 450, 50, 4, ORANGE, speed_x = 3, move_range = 700)
+platforms.add(platform1, platform2, platform4, platformpink, platformred, platformdeath, platformdeath2, platformdeath3)
 
 # Add enemy
 enemy = Enemy(platform4)
@@ -217,31 +212,33 @@ for character in characters:
             if platform.color == character.live_color or platform.color == GRAY:
                 character.on_ground = True
 
+pygame.font.init()
+
 # Main game loop
 running = True
 while running:
     screen.fill((0, 0, 0))
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
-                sq1.jump()
-            if event.key == pygame.K_w:
-                sq2.jump()
-
-    # Get the state of all keys
     keys = pygame.key.get_pressed()
 
     if keys[pygame.K_LEFT]:
-        sq1.move(-5, 0)
+        sq1.move(-7, 0)
     if keys[pygame.K_RIGHT]:
-        sq1.move(5, 0)
+        sq1.move(7, 0)
     if keys[pygame.K_a]:
-        sq2.move(-5, 0)
+        sq2.move(-7, 0)
     if keys[pygame.K_d]:
-        sq2.move(5, 0)
+        sq2.move(7, 0)
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP and sq1.on_ground:
+                sq1.jump()
+            if event.key == pygame.K_w and sq2.on_ground:
+                sq2.jump()
 
     for platform in platforms:
         platform.move()
@@ -272,6 +269,27 @@ while running:
         print("Game over. Exiting... 3 seconds...")
         pygame.display.flip()
         pygame.time.wait(3000)
+        running = False
+
+    # Death/Victory announcements
+    if not sq1.alive and sq2.alive:
+        font = pygame.font.SysFont("comicsans", 50, bold=True)
+        victory_text = font.render("PINK WINS!", True, (255, 105, 180))
+        victory_rect = victory_text.get_rect(center=(screen_width // 2, screen_height // 2))
+        screen.blit(victory_text, victory_rect)
+        pygame.display.flip()
+        pygame.time.wait(3000)
+        running = False
+
+    elif not sq2.alive and sq1.alive:
+        font = pygame.font.SysFont("comicsans", 50, bold=True)
+        victory_text = font.render("RED WINS!", True, (255, 0, 0))
+        victory_rect = victory_text.get_rect(center=(screen_width // 2, screen_height // 2))
+        screen.blit(victory_text, victory_rect)
+        pygame.display.flip()
+        pygame.time.wait(3000)
+        running = False
+
         running = False
 
     # Update the display
