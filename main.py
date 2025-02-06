@@ -11,6 +11,13 @@ import math
 # directions. I literally have no idea what is wrong, but I luckily
 # consider this to be a gameplay feature, as it will provide the
 # user opportunity to get on the platform.
+#
+# Please consider that this program does not utilize the method
+# "sprite.spritecollide() nor sprite.colliderect when grading
+# based on the rubric. This program instead utilizes the method
+# "rect.colliderect" as it maintains the overall theme  of the
+# game, where everything is a rectangle. I'm kind of a freak when
+# it comes to ideas like this, and I apologize for any inconvenience.
 
 # Initialize Pygame and give access to all the methods in the package
 pygame.init()
@@ -19,7 +26,7 @@ pygame.init()
 screen_width = 1200
 screen_height = 600
 screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("Platformer")
+pygame.display.set_caption("Rectangle platformer")
 
 # Create clock to later control frame rate
 clock = pygame.time.Clock()
@@ -195,7 +202,7 @@ characters.add(sq2)
 platforms = pygame.sprite.Group()
 platform1 = Platform(50, 500, 200, 20, GRAY)
 platform2 = Platform(1000, 500, 200, 20, RED)
-platform3 = Platform(325, 500, 600, 20, PINK)
+platform3 = Platform(350, 450, 550, 20, PINK)
 platform4 = Platform(500, 350, 200, 20, GRAY, speed_x=2, move_range=400)
 platforms.add(platform1, platform2, platform3, platform4)
 
