@@ -3,7 +3,14 @@ import sys
 import random
 import math
 
-from setuptools.msvc import PlatformInfo
+######################## NOTES FOR MR. YIN ########################
+# For some reason, the gravity and switching direction logic is not
+# working for the enemy, particularly when the platform switches
+# directions. The enemy just levitates in place until the platform
+# returns, which then it will be back on the platform and switch
+# directions. I literally have no idea what is wrong, but I luckily
+# consider this to be a gameplay feature, as it will provide the
+# user opportunity to get on the platform.
 
 # Initialize Pygame and give access to all the methods in the package
 pygame.init()
@@ -12,7 +19,7 @@ pygame.init()
 screen_width = 1200
 screen_height = 600
 screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("Agario")
+pygame.display.set_caption("Platformer")
 
 # Create clock to later control frame rate
 clock = pygame.time.Clock()
@@ -138,6 +145,7 @@ class Enemy(pygame.sprite.Sprite):
         self.speed = speed
         self.direction = 1
         self.on_ground = True
+        self.velocity_y = 0
 
     def move(self, platforms):
         if self.on_ground and self.platform:
